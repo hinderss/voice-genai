@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+*.venv
+venv/
+.env
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+
+# Shared / temporary
+shared/
+*.log
+*.tmp
+``

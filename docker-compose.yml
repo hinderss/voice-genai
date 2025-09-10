@@ -1,0 +1,33 @@
+services:
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  api:
+    build: .
+    container_name: voice_api
+    volumes:
+      - ./shared:/shared
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  celery_worker:
+    build: .
+    container_name: celery_worker
+    command: celery -A api.core.celery_worker worker --loglevel=info
+    volumes:
+      - ./shared:/shared
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+volumes:
+  redis_data:
