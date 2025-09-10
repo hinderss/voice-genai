@@ -1,0 +1,30 @@
+sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant Redis as Redis (broker/backend)
+    participant CeleryWorker
+    participant OpenAI
+
+    Note over Client, CeleryWorker: 1. Process of sending audio and starting a task
+    Client->>FastAPI: POST /voice-to-answer + audio file
+    FastAPI->>FastAPI: Saves file to /shared
+    FastAPI->>Redis: Puts task in Celery queue
+    FastAPI-->>Client: Returns task_id (status=processing)
+
+    Note over Client: Client waits for task completion
+
+    CeleryWorker->>Redis: Picks task from queue
+    CeleryWorker->>FastAPI: Reads file (path from /shared)
+    Note over CeleryWorker, OpenAI: 2. Task processing by the worker
+    CeleryWorker->>OpenAI: Audio transcription (VOICE_MODEL)
+    OpenAI-->>CeleryWorker: Transcribed text
+    CeleryWorker->>OpenAI: GPT response to text (GPT_MODEL + PROMPT)
+    OpenAI-->>CeleryWorker: Text answer
+    CeleryWorker->>FastAPI: Deletes temporary file
+    CeleryWorker->>Redis: Saves task result
+
+    Note over Client, Redis: 3. Process of checking task status
+    Client->>FastAPI: GET /tasks/{task_id}
+    FastAPI->>Redis: Retrieves task status and result
+    Redis-->>FastAPI: Status and result
+    FastAPI-->>Client: Returns result (transcribed_text + answer)
